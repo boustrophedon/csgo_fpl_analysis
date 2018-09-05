@@ -1,6 +1,8 @@
 import requests
 import time
 
+import os
+
 API_KEY = open(".faceit_key", "r").read().strip()
 
 NA_FPL = "748cf78c-be73-4eb9-b131-21552f2f8b75"
@@ -51,6 +53,9 @@ def get_demo_urls(matches):
     return demo_urls
 
 if __name__ == '__main__':
+    # make data/ and data/demos/ dirs if they don't exist
+    os.makedirs("data/demos/", exist_ok=True)
+
     # because we filter out matches that did not get played, this is actually
     # an upper bound on the number of demos
     NUM_DEMOS = 250
@@ -58,11 +63,11 @@ if __name__ == '__main__':
     na_matches = get_matches(NA_FPL, num_matches=NUM_DEMOS)
     na_fpl_urls = get_demo_urls(filter_incomplete_matches(na_matches))
 
-    with open("na_fpl_demos.txt", "a") as f:
+    with open("data/na_fpl_demo_urls.txt", "a") as f:
         f.write('\n'.join(na_fpl_urls))
 
     eu_matches = get_matches(EU_FPL, num_matches=NUM_DEMOS)
     eu_fpl_urls = get_demo_urls(filter_incomplete_matches(eu_matches))
 
-    with open("eu_fpl_demos.txt", "a") as f:
+    with open("data/eu_fpl_demo_urls.txt", "a") as f:
         f.write('\n'.join(eu_fpl_urls))
