@@ -1,7 +1,8 @@
-import requests
+import csv
+import os
 import time
 
-import os
+import requests
 
 API_KEY = open(".faceit_key", "r").read().strip()
 
@@ -44,30 +45,48 @@ def filter_incomplete_matches(matches):
 
     return output
 
-# Given a list of match json objects, return the demo urls
+# Given a list of match json objects, return a list of tuples containing the
+# faceit match id, the start time of the match, and the demo url
 def get_demo_urls(matches):
     demo_urls = list()
     for match in matches:
-        demo_urls.append(match['demo_url'][0])
+        demo_urls.append( (match['match_id'], match['started_at'], match['demo_url'][0]) )
 
     return demo_urls
+
+# download and save information about faceit csgo fpl matches in a simple csv format
+# the csv files contain:
+# faceit match id, match start time as a unix timestamp, the demo url 
+def download_fpl_demo_info():
+    # because we filter out matches that did not get played, this is actually
+    # an upper bound on the number of demos
+    NUM_DEMOS = 250
+
+
+    # NA FPL
+
+    na_matches = get_matches(NA_FPL, num_matches=NUM_DEMOS)
+    na_demo_info = get_demo_urls(filter_incomplete_matches(na_matches))
+
+    with open("data/na_fpl_demo_info.csv", "w", newline='') as f:
+        # there is no write header for non-dict csv writers so we write our own
+        print("match_id,started_at,demo_url", file=f)
+        w = csv.writer(f)
+        w.writerows(na_demo_info)
+
+
+    # EU FPL
+
+    eu_matches = get_matches(EU_FPL, num_matches=NUM_DEMOS)
+    eu_demo_info = get_demo_urls(filter_incomplete_matches(eu_matches))
+
+    with open("data/eu_fpl_demo_info.csv", "a") as f:
+        print("match_id,started_at,demo_url", file=f)
+        w = csv.writer(f)
+        w.writerows(eu_demo_info)
 
 if __name__ == '__main__':
     # make data/ and data/demos/ dirs if they don't exist
     os.makedirs("data/demos/", exist_ok=True)
 
-    # because we filter out matches that did not get played, this is actually
-    # an upper bound on the number of demos
-    NUM_DEMOS = 250
-
-    na_matches = get_matches(NA_FPL, num_matches=NUM_DEMOS)
-    na_fpl_urls = get_demo_urls(filter_incomplete_matches(na_matches))
-
-    with open("data/na_fpl_demo_urls.txt", "a") as f:
-        f.write('\n'.join(na_fpl_urls))
-
-    eu_matches = get_matches(EU_FPL, num_matches=NUM_DEMOS)
-    eu_fpl_urls = get_demo_urls(filter_incomplete_matches(eu_matches))
-
-    with open("data/eu_fpl_demo_urls.txt", "a") as f:
-        f.write('\n'.join(eu_fpl_urls))
+    download_fpl_demo_info()
