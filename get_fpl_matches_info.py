@@ -30,7 +30,9 @@ def get_matches(hub, first_match=0, num_matches=20):
         params = {"type":"past", "offset":start, "limit":REQUEST_STEP}
         resp = requests.get(matches_api_url, params=params, headers=headers)
 
-        print("Response getting matches: {}".format(resp.status_code))
+        # error if we got bad data
+        resp.raise_for_status()
+
         matches+= resp.json()['items']
         time.sleep(1)
 
@@ -80,7 +82,8 @@ def download_fpl_demo_info():
     eu_matches = get_matches(EU_FPL, num_matches=NUM_DEMOS)
     eu_demo_info = get_demo_urls(filter_incomplete_matches(eu_matches))
 
-    with open("data/eu_fpl_demo_info.csv", "a") as f:
+    with open("data/eu_fpl_demo_info.csv", "w", newline='') as f:
+        # there is no write header for non-dict csv writers so we write our own
         print("match_id,started_at,demo_url", file=f)
         w = csv.writer(f)
         w.writerows(eu_demo_info)
